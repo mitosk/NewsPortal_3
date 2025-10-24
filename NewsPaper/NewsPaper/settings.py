@@ -23,10 +23,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',
+    'django.contrib.sites',  # Только один раз!
+
+    # allauth apps
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    # 'allauth.socialaccount.providers.yandex',  # Раскомментируйте позже
+
+    # Ваши приложения
     'django_filters',
     'news',
-    # 'accounts' - УДАЛЕНО
 ]
 
 MIDDLEWARE = [
@@ -37,6 +44,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # allauth middleware (добавьте это)
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'NewsPaper.urls'
@@ -49,7 +59,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'django.template.context_processors.request',
+                'django.template.context_processors.request',  # Важно для allauth
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -84,20 +94,22 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'optional'
 
-# Социальные аутентификации
-SOCIALACCOUNT_PROVIDERS = {
-    'yandex': {
-        'APP': {
-            'client_id': 'your_yandex_client_id',
-            'secret': 'your_yandex_secret',
-            'key': ''
-        }
-    }
-}
+# Для разработки - отправка emails в консоль
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Сигналы для автоматического добавления в группу
-ACCOUNT_SIGNUP_GROUPS = ['common']
+# Социальные аутентификации (пока закомментировано)
+# SOCIALACCOUNT_PROVIDERS = {
+#     'yandex': {
+#         'APP': {
+#             'client_id': 'your_yandex_client_id',
+#             'secret': 'your_yandex_secret',
+#             'key': ''
+#         }
+#     }
+# }
 
+# Уберите эту строку - это не стандартная настройка Django
+# ACCOUNT_SIGNUP_GROUPS = ['common']
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

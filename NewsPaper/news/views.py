@@ -5,12 +5,12 @@ from django.db.models import Count, Q
 from .models import Post, Category, Author
 from .filters import PostFilter
 from .forms import PostForm
-from django.contrib.auth.mixins import LoginRequiredMixin
-from .mixins import AuthorRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.shortcuts import redirect, render
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 
 
 @login_required
@@ -24,6 +24,20 @@ def become_author(request):
     return render(request, 'news/become_author.html')
 
 
+# Простые функциональные представления для основной страницы
+def news_list(request):
+    """Простое представление для списка всех постов"""
+    posts = Post.objects.all().order_by('-created_at')
+    return render(request, 'news/news_list.html', {'posts': posts})
+
+
+def news_detail(request, pk):
+    """Простое представление для деталей поста"""
+    post = get_object_or_404(Post, pk=pk)
+    return render(request, 'news/news_detail.html', {'post': post})
+
+
+# Существующие классовые представления (оставляем как есть)
 class NewsList(ListView):
     model = Post
     template_name = 'news/news_list.html'
@@ -80,11 +94,13 @@ class ArticleSearch(ListView):
         return context
 
 
-class NewsCreate(CreateView):
+# Обновляем представления создания с проверкой прав
+class NewsCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
     template_name = 'news/news_edit.html'
     success_url = reverse_lazy('news_list')
+    permission_required = 'news.add_post'
 
     def form_valid(self, form):
         post = form.save(commit=False)
@@ -115,30 +131,33 @@ class NewsCreate(CreateView):
         return super().form_valid(form)
 
 
-class NewsUpdate(UpdateView):
+class NewsUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'news/news_edit.html'
     success_url = reverse_lazy('news_list')
+    permission_required = 'news.change_post'
 
     def get_queryset(self):
         return Post.objects.filter(post_type='news')
 
 
-class NewsDelete(DeleteView):
+class NewsDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Post
     template_name = 'news/news_delete.html'
     success_url = reverse_lazy('news_list')
+    permission_required = 'news.delete_post'
 
     def get_queryset(self):
         return Post.objects.filter(post_type='news')
 
 
-class ArticleCreate(CreateView):
+class ArticleCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
     template_name = 'news/article_edit.html'
     success_url = reverse_lazy('article_list')
+    permission_required = 'news.add_post'
 
     def form_valid(self, form):
         article = form.save(commit=False)
@@ -166,20 +185,22 @@ class ArticleCreate(CreateView):
         return super().form_valid(form)
 
 
-class ArticleUpdate(UpdateView):
+class ArticleUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'news/article_edit.html'
     success_url = reverse_lazy('article_list')
+    permission_required = 'news.change_post'
 
     def get_queryset(self):
         return Post.objects.filter(post_type='article')
 
 
-class ArticleDelete(DeleteView):
+class ArticleDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Post
     template_name = 'news/article_delete.html'
     success_url = reverse_lazy('article_list')
+    permission_required = 'news.delete_post'
 
     def get_queryset(self):
         return Post.objects.filter(post_type='article')
@@ -260,24 +281,29 @@ class CategoryList(ListView):
         context['total_articles'] = total_articles
         return context
 
-    class PostCreateView(LoginRequiredMixin, AuthorRequiredMixin, CreateView):
-        model = Post
-        fields = ['title', 'text', 'category', 'post_type']
-        template_name = 'news/post_edit.html'
-        success_url = '/news/'
 
-        def form_valid(self, form):
-            form.instance.author = self.request.user
-            return super().form_valid(form)
+# Убираем вложенные классы и выносим их отдельно
+class PostCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = Post
+    fields = ['title', 'text', 'category', 'post_type']
+    template_name = 'news/post_edit.html'
+    success_url = '/news/'
+    permission_required = 'news.add_post'
 
-    class PostUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
-        model = Post
-        fields = ['title', 'text', 'category', 'post_type']
-        template_name = 'news/post_edit.html'
-        success_url = '/news/'
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
 
-        def dispatch(self, request, *args, **kwargs):
-            obj = self.get_object()
-            if obj.author != self.request.user:
-                raise PermissionDenied("Вы можете редактировать только свои посты")
-            return super().dispatch(request, *args, **kwargs)
+
+class PostUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Post
+    fields = ['title', 'text', 'category', 'post_type']
+    template_name = 'news/post_edit.html'
+    success_url = '/news/'
+    permission_required = 'news.change_post'
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.author != self.request.user:
+            raise PermissionDenied("Вы можете редактировать только свои посты")
+        return super().dispatch(request, *args, **kwargs)

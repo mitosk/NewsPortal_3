@@ -1,12 +1,18 @@
-{% extends 'base.html' %}
-
-{% block content %}
-<h2>Регистрация</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Зарегистрироваться</button>
-</form>
-<p>Или зарегистрируйтесь через:</p>
-<a href="{% provider_login_url 'yandex' %}">Yandex</a>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Регистрация</title>
+</head>
+<body>
+    <h2>Регистрация</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+    
+    <p>Уже есть аккаунт? <a href="{% url 'account_login' %}">Войдите</a></p>
+    <a href="{% url 'news_list' %}">← Назад к новостям</a>
+</body>
+</html>

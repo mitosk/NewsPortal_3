@@ -2,72 +2,39 @@
 <html>
 <head>
     <title>Новости</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-        .news-item { border: 1px solid #ddd; padding: 20px; margin: 15px 0; border-radius: 8px; background: #f9f9f9; }
-        .pagination { margin: 30px 0; text-align: center; }
-        .pagination a { padding: 8px 16px; margin: 0 5px; text-decoration: none; border: 1px solid #007bff; color: #007bff; border-radius: 4px; }
-        .pagination .current { padding: 8px 16px; margin: 0 5px; background: #007bff; color: white; border-radius: 4px; }
-        nav { margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-radius: 5px; }
-        nav a { margin-right: 20px; text-decoration: none; color: #007bff; font-weight: bold; }
-        .meta-info { color: #666; font-size: 0.9em; margin: 10px 0; }
-        .actions a { margin-right: 15px; text-decoration: none; color: #28a745; }
-        .actions a.delete { color: #dc3545; }
-        .empty-state { text-align: center; padding: 40px; color: #666; }
-    </style>
 </head>
 <body>
-    <h1>Все новости</h1>
+    <h1>Новости (всего: {{ posts|length }})</h1>
 
-    <nav>
-        <a href="{% url 'news_search' %}">Поиск новостей</a>
-        <a href="{% url 'news_create' %}">Создать новость</a>
-        <a href="{% url 'article_list' %}">Перейти к статьям</a>
-        <a href="{% url 'category_list' %}">По категориям</a>
-    </nav>
-
-    {% for item in news %}
-        <div class="news-item">
-            <h2>{{ item.title }}</h2>
-            <p>{{ item.text|truncatewords:50 }}</p>
-
-            <div class="meta-info">
-                <strong>Автор:</strong> {{ item.author.user.username }} |
-                <strong>Дата:</strong> {{ item.created_at|date:"d.m.Y H:i" }} |
-                <strong>Рейтинг:</strong> {{ item.rating }}
-            </div>
-
-            <div class="actions">
-                <a href="{% url 'news_edit' item.pk %}">Редактировать</a>
-                <a href="{% url 'news_delete' item.pk %}" class="delete">Удалить</a>
-            </div>
-        </div>
-    {% empty %}
-        <div class="empty-state">
-            <h3>Новостей пока нет</h3>
-            <p><a href="{% url 'news_create' %}">Создайте первую новость!</a></p>
-        </div>
-    {% endfor %}
-
-    <!-- Пагинация -->
-    {% if page_obj.paginator.num_pages > 1 %}
-    <div class="pagination">
-        <span class="step-links">
-            {% if page_obj.has_previous %}
-                <a href="?page=1">&laquo; первая</a>
-                <a href="?page={{ page_obj.previous_page_number }}">предыдущая</a>
-            {% endif %}
-
-            <span class="current">
-                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
-            </span>
-
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">следующая</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}">последняя &raquo;</a>
-            {% endif %}
-        </span>
+    <!-- Простая навигация -->
+    <div>
+        {% if user.is_authenticated %}
+            <p>Привет, {{ user.email }}!
+            <a href="{% url 'account_logout' %}">Выйти</a></p>
+        {% else %}
+            <a href="{% url 'account_login' %}">Войти</a> |
+            <a href="{% url 'account_signup' %}">Регистрация</a>
+        {% endif %}
     </div>
-    {% endif %}
+
+    <hr>
+
+    <!-- Список новостей -->
+    <div>
+        {% if posts %}
+            {% for post in posts %}
+            <div style="border: 1px solid #ccc; margin: 10px 0; padding: 10px;">
+                <h3>{{ post.title }}</h3>
+                <p>{{ post.text|truncatewords:20 }}</p>
+                <p><small>
+                    Автор: {% if post.author %}{{ post.author.username }}{% else %}Неизвестен{% endif %},
+                    Дата: {{ post.created_at|date:"d.m.Y H:i" }}
+                </small></p>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: red;">НОВОСТЕЙ НЕТ, но в базе их 31! Проверьте шаблон.</p>
+        {% endif %}
+    </div>
 </body>
 </html>

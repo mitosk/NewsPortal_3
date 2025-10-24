@@ -1,10 +1,24 @@
-{% extends 'base.html' %}
-
-{% block content %}
-<h2>Стать автором</h2>
-<p>Став автором, вы сможете создавать и редактировать новости и статьи.</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-primary">Стать автором</button>
-</form>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Стать автором</title>
+</head>
+<body>
+    <h2>Стать автором</h2>
+    
+    {% if user.groups.filter.name == 'authors' %}
+        <p>Вы уже являетесь автором!</p>
+    {% else %}
+        <p>Став автором, вы сможете создавать и редактировать новости и статьи.</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">
+                Стать автором
+            </button>
+        </form>
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'news_list' %}">← Назад к новостям</a>
+</body>
+</html>

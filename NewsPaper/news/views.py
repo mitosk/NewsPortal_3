@@ -5,6 +5,23 @@ from django.db.models import Count, Q
 from .models import Post, Category, Author
 from .filters import PostFilter
 from .forms import PostForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .mixins import AuthorRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group
+from django.shortcuts import redirect, render
+from django.contrib import messages
+
+
+@login_required
+def become_author(request):
+    if request.method == 'POST':
+        authors_group = Group.objects.get(name='authors')
+        request.user.groups.add(authors_group)
+        messages.success(request, 'Поздравляем! Теперь вы автор и можете создавать и редактировать посты.')
+        return redirect('/news/')
+
+    return render(request, 'news/become_author.html')
 
 
 class NewsList(ListView):
@@ -242,3 +259,25 @@ class CategoryList(ListView):
         context['total_news'] = total_news
         context['total_articles'] = total_articles
         return context
+
+    class PostCreateView(LoginRequiredMixin, AuthorRequiredMixin, CreateView):
+        model = Post
+        fields = ['title', 'text', 'category', 'post_type']
+        template_name = 'news/post_edit.html'
+        success_url = '/news/'
+
+        def form_valid(self, form):
+            form.instance.author = self.request.user
+            return super().form_valid(form)
+
+    class PostUpdateView(LoginRequiredMixin, AuthorRequiredMixin, UpdateView):
+        model = Post
+        fields = ['title', 'text', 'category', 'post_type']
+        template_name = 'news/post_edit.html'
+        success_url = '/news/'
+
+        def dispatch(self, request, *args, **kwargs):
+            obj = self.get_object()
+            if obj.author != self.request.user:
+                raise PermissionDenied("Вы можете редактировать только свои посты")
+            return super().dispatch(request, *args, **kwargs)

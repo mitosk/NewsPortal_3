@@ -67,6 +67,38 @@ DATABASES = {
     }
 }
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# Перенаправления
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/news/'
+LOGOUT_REDIRECT_URL = '/news/'
+
+# Настройки allauth
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+
+# Социальные аутентификации
+SOCIALACCOUNT_PROVIDERS = {
+    'yandex': {
+        'APP': {
+            'client_id': 'your_yandex_client_id',
+            'secret': 'your_yandex_secret',
+            'key': ''
+        }
+    }
+}
+
+# Сигналы для автоматического добавления в группу
+ACCOUNT_SIGNUP_GROUPS = ['common']
+
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
